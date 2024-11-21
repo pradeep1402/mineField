@@ -61,42 +61,51 @@ function randomPos() {
   return Math.floor(Math.random() * 3) + 1;
 }
 
-function mineGenrator(currentPos, length, lastPos) {
-  const isDownValid = !(currentPos > ((length * length) - length)) && currentPos + length !== lastPos;
-  const isLeftValid = !(currentPos % length === 1) && currentPos - 1 !== lastPos;
-  const isRightValid = !(currentPos % length === 0) && currentPos + 1 !== lastPos;
-  const isUpValid = !(currentPos <= length) && currentPos - length !== lastPos;
+function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
+  const leftPosIndex = curPostion - 1;
+  const rightPosIndex = curPostion + 1;
+  const upPosIndex = curPostion - length;
+  const downPosIndex = curPostion + length;
 
-  const leftPosIndex = currentPos - 1;
-  const rightPosIndex = currentPos + 1;
-  const upPosIndex = currentPos - length;
-  const downPosIndex = currentPos + length;
-
-  if (isLeftValid && isDownValid && isRightValid) {
-    const selectingRightOrLeft = randomPos() === 1 ? leftPosIndex : rightPosIndex;
-    return randomPos() === 1 ? downPosIndex : selectingRightOrLeft;
+  if (isValidL && isValidR) {
+    const selectRightOrLeft = randomPos() === 1 ? leftPosIndex : rightPosIndex;
+    if (isValidU) {
+      return randomPos() === 1 ? upPosIndex : selectRightOrLeft;
+    }
+    return randomPos() === 1 ? downPosIndex : selectRightOrLeft;
   }
 
-  if (isRightValid && isUpValid && isLeftValid) {
-    const selectingRightOrLeft = randomPos() === 1 ? leftPosIndex : rightPosIndex;
-    return randomPos() === 1 ? upPosIndex : selectingRightOrLeft;
+  if (isValidU && isValidD) {
+    const selectUpOrDown = randomPos() === 1 ? upPosIndex : downPosIndex;
+    if (isValidL) {
+      return randomPos() === 1 ? leftPosIndex : selectUpOrDown;
+    }
+    return randomPos() === 1 ? rightPosIndex : selectUpOrDown;
   }
 
-  if (isRightValid && isUpValid) {
+  if (isValidR) {
+    if (isValidD) {
+      return randomPos() === 1 ? downPosIndex : rightPosIndex;
+    }
     return randomPos() === 1 ? upPosIndex : rightPosIndex;
   }
 
-  if (isRightValid && isDownValid) {
-    return randomPos() === 1 ? downPosIndex : rightPosIndex;
-  }
-
-  if (isLeftValid && isUpValid) {
+  if (isValidL) {
+    if (isValidD) {
+      return randomPos() === 1 ? downPosIndex : leftPosIndex;
+    }
     return randomPos() === 1 ? upPosIndex : leftPosIndex;
   }
+}
 
-  if (isLeftValid && isDownValid) {
-    return randomPos() === 1 ? downPosIndex : leftPosIndex;
-  }
+function getMinePosition(currentPos, length, lastPos) {
+  const rowIndex = (length * length) - length;
+  const isValidD = !(currentPos > rowIndex) && currentPos + length !== lastPos;
+  const isValidL = !(currentPos % length === 1) && currentPos - 1 !== lastPos;
+  const isValidR = !(currentPos % length === 0) && currentPos + 1 !== lastPos;
+  const isValidU = !(currentPos <= length) && currentPos - length !== lastPos;
+
+  return posOfMine(isValidL, isValidR, isValidU, isValidD, currentPos, length);
 }
 
 function messageAccToResult(currentPos, steps) {
@@ -105,41 +114,52 @@ function messageAccToResult(currentPos, steps) {
     return;
   }
   console.log('Wooohoo! You win... 🤩🏆🥇\nYou took ' + steps + ' steps.')
-
 }
 
-function mineSweeper(length, noOfLives) {
-  if (!isInputValid(length, noOfLives)) return;
+function delayMessage(chances, len) {
+  console.clear();
+  console.log('You have only ' + chances + ' chances left.');
+  console.log('There is a mine...💥💥💣');
+  for (let i = 0; i < len * 300000000; i++) { }
+}
 
+function calChances(chancesLeft, length) {
+  chancesLeft--;
+  delayMessage(chancesLeft, length);
+  return chancesLeft;
+}
+
+function mineFieldSetup(length, noOfLives) {
   let chancesLeft = noOfLives;
   let currentPos = length * length;
   let lastPos = currentPos;
   let steps = 0;
   while (!(currentPos === 1)) {
     lastPos = currentPos;
-    const mineAt = mineGenrator(currentPos, length, lastPos);
+    const mineAt = getMinePosition(currentPos, length, lastPos);
     console.log(mineBoard(length, currentPos, mineAt));
-    const charToControl = prompt('Enter W to ⬆️ , A to ⬅️ , S to ⬇️ and D to ➡️ :');
+    const charToControl = prompt('Move W to ⬆️ , A to ⬅️ , S to ⬇️ and D to ➡️ :');
     currentPos = controler(charToControl, currentPos, length);
     steps++;
     if (mineAt === currentPos && !(mineAt === 1)) {
-      chancesLeft--;
-
-      console.clear();
-      console.log('You have only ' + chancesLeft + ' chances left.');
-      console.log('There is a mine...💥💥💣');
-      for (let i = 0; i < length * 420000000; i++) { }
+      chancesLeft = calChances(chancesLeft, length, lastPos);
       currentPos = lastPos;
+      if (chancesLeft === 0) return;
     }
-    if (chancesLeft === 0) break;
     console.log('\n');
   }
   console.log(mineBoard(length, currentPos));
   messageAccToResult(currentPos, steps);
 }
 
+function mineField(length, noOfLives) {
+  if (!isInputValid(length, noOfLives)) return;
+
+  return mineFieldSetup(length, noOfLives);
+}
+
 console.clear();
 const boardLength = +prompt('Enter the length of the board => ');
 const noOfLives = +prompt('Enter the number lives=> ');
 
-mineSweeper(boardLength, noOfLives);
+mineField(boardLength, noOfLives);
