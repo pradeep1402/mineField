@@ -11,12 +11,11 @@ const BACKWARD = 's';
 
 const MOVE_MESSAGE = 'To move W to ⬆️ | A to ⬅️ | S to ⬇️ | D to ➡️ :';
 
-function isDivisible(number, divisor) {
-  return number % divisor === 0;
+function isDivisible(dividend, divisor) {
+  return dividend % divisor === 0;
 }
 
 function mineBoard(length, playerPos) {
-  // console.clear();
   let board = '';
   const numberOfCells = length * length;
 
@@ -33,12 +32,11 @@ function mineBoard(length, playerPos) {
   return board;
 }
 
-function converLowerCase(letter) {
-  const code = letter.charCodeAt(letter);
-
-  if (code >= 65 && code <= 90) {
-    return String.fromCharCode(code + 32);
-  }
+function convertToLowerCase(letter) {
+  if (letter === 'W' || letter === 'w') return 'w';
+  if (letter === 'A' || letter === 'a') return 'a';
+  if (letter === 'S' || letter === 's') return 's';
+  if (letter === 'D' || letter === 'd') return 'd';
 
   return letter;
 }
@@ -48,19 +46,19 @@ function moveForward(length, currentPos) {
 }
 
 function moveLeftOrRight(length, curPostion, isLeft) {
-  const reaminder = curPostion % length;
+  const reminder = curPostion % length;
 
   if (isLeft) {
-    return reaminder === 1 ? curPostion : curPostion - 1;
+    return reminder === 1 ? curPostion : curPostion - 1;
   }
 
-  return reaminder ? curPostion + 1 : curPostion;
+  return reminder ? curPostion + 1 : curPostion;
 }
 
 function moveBackward(length, currentPos) {
-  const isValidMove = currentPos > Math.pow(length, 2) - length;
+  const isMoveValid = currentPos > Math.pow(length, 2) - length;
 
-  return isValidMove ? currentPos : currentPos + length;
+  return isMoveValid ? currentPos : currentPos + length;
 }
 
 function inputForMove() {
@@ -68,7 +66,7 @@ function inputForMove() {
 }
 
 function controller(move, currentPos, length) {
-  switch (move) {
+  switch (convertToLowerCase(move)) {
     case FORWARD:
       return moveForward(length, currentPos);
 
@@ -82,6 +80,8 @@ function controller(move, currentPos, length) {
       return moveBackward(length, currentPos);
 
     default:
+      console.clear();
+      console.log(mineBoard(length, currentPos));
       console.log('Please enter a valid input...');
       const validChar = inputForMove();
       return controller(validChar, currentPos, length);
@@ -95,8 +95,8 @@ function isInputValid(length, chances) {
     return false;
   }
 
-  if (chances === 0 || length === 1) {
-    console.log('Input number seems to be lesser than required. Chances should be more than 1 and length should be more than 1.');
+  if (chances < 5 || length < 5) {
+    console.log('Input number seems to be lesser than required. Chances and length both should be more than 4.');
     return false;
   }
 
