@@ -1,60 +1,111 @@
 const PLAYER = '🧑‍🦱';
 const GREEN_BLOCK = '🟩';
 
-function mineBoard(length, playerPos, minePos) {
-  console.clear();
-  let board = '';
-  let currentPos = 0;
+const LINE_BREAK = '\n';
+const START_POINT = '⬅️ start';
 
-  for (let col = 0; col < length; col++) {
-    for (let row = 0; row < length; row++) {
-      currentPos++;
-      if (playerPos === currentPos) {
-        board += PLAYER;
-      } else {
-        board += GREEN_BLOCK;
-      }
+const FORWARD = 'w';
+const LEFT = 'a';
+const RIGHT = 'd';
+const BACKWARD = 's';
+
+const MOVE_MESSAGE = 'To move W to ⬆️ | A to ⬅️ | S to ⬇️ | D to ➡️ :';
+
+function isDivisible(number, divisor) {
+  return number % divisor === 0;
+}
+
+function mineBoard(length, playerPos) {
+  // console.clear();
+  let board = '';
+  const numberOfCells = length * length;
+
+  for (let index = 1; index <= numberOfCells; index++) {
+    board += playerPos === index ? PLAYER : GREEN_BLOCK;
+
+    if (index === numberOfCells) {
+      board += START_POINT;
     }
-    if (col === length - 1) {
-      board += '⬅️ start'
-    }
-    board += '\n';
+
+    board += isDivisible(index, length) ? LINE_BREAK : '';
   }
 
   return board;
 }
 
-function controler(char, currentPos, length) {
-  if (char === 'W' || char === 'w')
-    return currentPos <= length ? currentPos : currentPos - length;
-  if (char === 'A' || char === 'a')
-    return currentPos % length === 1 ? currentPos : currentPos - 1;
-  if (char === 'D' || char === 'd')
-    return currentPos % length === 0 ? currentPos : currentPos + 1;
-  if (char === 'S' || char === 's')
-    return currentPos > Math.pow(length, 2) - length ? currentPos : currentPos + length;
-  const validChar = prompt('Please enter a valid input...');
-  return controler(validChar, currentPos, length);
+function converLowerCase(letter) {
+  const code = letter.charCodeAt(letter);
+
+  if (code >= 65 && code <= 90) {
+    return String.fromCharCode(code + 32);
+  }
+
+  return letter;
 }
 
-function isInputValid(length, noOfMines) {
+function moveForward(length, currentPos) {
+  return currentPos <= length ? currentPos : currentPos - length;
+}
+
+function moveLeftOrRight(length, curPostion, isLeft) {
+  const reaminder = curPostion % length;
+
+  if (isLeft) {
+    return reaminder === 1 ? curPostion : curPostion - 1;
+  }
+
+  return reaminder ? curPostion + 1 : curPostion;
+}
+
+function moveBackward(length, currentPos) {
+  const isValidMove = currentPos > Math.pow(length, 2) - length;
+
+  return isValidMove ? currentPos : currentPos + length;
+}
+
+function inputForMove() {
+  return prompt(MOVE_MESSAGE);
+}
+
+function controller(move, currentPos, length) {
+  switch (move) {
+    case FORWARD:
+      return moveForward(length, currentPos);
+
+    case LEFT:
+      return moveLeftOrRight(length, currentPos, true);
+
+    case RIGHT:
+      return moveLeftOrRight(length, currentPos, false);
+
+    case BACKWARD:
+      return moveBackward(length, currentPos);
+
+    default:
+      console.log('Please enter a valid input...');
+      const validChar = inputForMove();
+      return controller(validChar, currentPos, length);
+  }
+}
+
+function isInputValid(length, chances) {
   console.clear();
-  if (length * length * (2 / 3) < noOfMines) {
-    console.log('Sorry, you have entered more mines than boxes.');
+  if (length * length < chances) {
+    console.log('Sorry, you have entered more chances than boxes.');
     return false;
   }
 
-  if (noOfMines === 0 || length === 1) {
-    console.log('Input number seems to be lesser than required. Mines should be more than 1 and spaces should be more than 1.');
+  if (chances === 0 || length === 1) {
+    console.log('Input number seems to be lesser than required. Chances should be more than 1 and length should be more than 1.');
     return false;
   }
 
-  if (isNaN(length) || isNaN(noOfMines)) {
+  if (isNaN(length) || isNaN(chances)) {
     console.log('Input is not number.');
     return false;
   }
 
-  return true
+  return true;
 }
 
 function randomPos() {
@@ -62,10 +113,10 @@ function randomPos() {
 }
 
 function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
-  const leftPosIndex = curPostion - 1;
-  const rightPosIndex = curPostion + 1;
-  const upPosIndex = curPostion - length;
-  const downPosIndex = curPostion + length;
+  const leftPosIndex = moveLeftOrRight(length, curPostion, true);
+  const rightPosIndex = moveLeftOrRight(length, curPostion, false);
+  const upPosIndex = moveForward(curPostion, length);
+  const downPosIndex = moveBackward(curPostion, length);
 
   if (isValidL && isValidR) {
     const selectRightOrLeft = randomPos() === 1 ? leftPosIndex : rightPosIndex;
@@ -98,11 +149,11 @@ function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
   }
 }
 
-function getMinePosition(currentPos, length, lastPos) {
+function getMineIndex(currentPos, length, lastPos) {
   const rowIndex = (length * length) - length;
   const isValidD = !(currentPos > rowIndex) && currentPos + length !== lastPos;
-  const isValidL = !(currentPos % length === 1) && currentPos - 1 !== lastPos;
-  const isValidR = !(currentPos % length === 0) && currentPos + 1 !== lastPos;
+  const isValidL = currentPos % length !== 1 && currentPos - 1 !== lastPos;
+  const isValidR = currentPos % length !== 0 && currentPos + 1 !== lastPos;
   const isValidU = !(currentPos <= length) && currentPos - length !== lastPos;
 
   return posOfMine(isValidL, isValidR, isValidU, isValidD, currentPos, length);
@@ -110,56 +161,63 @@ function getMinePosition(currentPos, length, lastPos) {
 
 function messageAccToResult(currentPos, steps) {
   if (currentPos > 1) {
-    console.log('Yehe you lose... 🥲😓\nBetter luck next time...');
-    return;
+    return 'Yehe you lose... 🥲😓\nBetter luck next time...';
   }
-  console.log('Wooohoo! You win... 🤩🏆🥇\nYou took ' + steps + ' steps.')
+  // console.log()
+  return 'Wooohoo! You win... 🤩🏆🥇\nYou took ' + steps + ' steps.';
 }
 
-function delayMessage(chances, len) {
-  console.clear();
+function hintMessage(chances) {
   console.log('You have only ' + chances + ' chances left.');
   console.log('There is a mine...💥💥💣');
-  for (let i = 0; i < len * 300000000; i++) { }
 }
 
-function calChances(chancesLeft, length) {
-  chancesLeft--;
-  delayMessage(chancesLeft, length);
-  return chancesLeft;
+function calChances(chances) {
+  chances--;
+  hintMessage(chances);
+  return chances;
 }
 
-function mineFieldSetup(length, noOfLives) {
-  let chancesLeft = noOfLives;
-  let currentPos = length * length;
-  let lastPos = currentPos;
+function mineFieldSetup(length, chances, currentPos) {
   let steps = 0;
-  while (!(currentPos === 1)) {
-    lastPos = currentPos;
-    const mineAt = getMinePosition(currentPos, length, lastPos);
-    console.log(mineBoard(length, currentPos, mineAt));
-    const charToControl = prompt('Move W to ⬆️ , A to ⬅️ , S to ⬇️ and D to ➡️ :');
-    currentPos = controler(charToControl, currentPos, length);
+
+  while (currentPos !== 1 && chances) {
+    console.clear();
+    const lastPos = currentPos;
+    const mineAt = getMineIndex(currentPos, length, lastPos);
+    console.log(mineBoard(length, currentPos));
+    const move = inputForMove();
+    currentPos = controller(move, currentPos, length);
     steps++;
-    if (mineAt === currentPos && !(mineAt === 1)) {
-      chancesLeft = calChances(chancesLeft, length, lastPos);
+
+    if (mineAt === currentPos && mineAt !== 1) {
+      chances = calChances(chances);
       currentPos = lastPos;
-      if (chancesLeft === 0) return;
     }
-    console.log('\n');
   }
+
   console.log(mineBoard(length, currentPos));
-  messageAccToResult(currentPos, steps);
+  return messageAccToResult(currentPos, steps);
 }
 
-function mineField(length, noOfLives) {
-  if (!isInputValid(length, noOfLives)) return;
+function gameInfo() {
+  const game = "\n\t\t💣 MINE FIELD 💣\n";
+  const goal = "\n Your goal is to reach the top left corner ↖️ ";
+  const currPos = "\n " + PLAYER + " represents your current Position. \n";
 
-  return mineFieldSetup(length, noOfLives);
+  return game + goal + currPos;
+}
+
+function startGame(length, chances) {
+  if (!isInputValid(length, chances)) return;
+
+  let currentPos = length * length;
+  return mineFieldSetup(length, chances, currentPos);
 }
 
 console.clear();
-const boardLength = +prompt('Enter the length of the board => ');
-const noOfLives = +prompt('Enter the number lives=> ');
+console.log(gameInfo());
+const boardLength = +prompt(' Enter the length of the board => ');
+const noOfLives = +prompt(' Enter the number lives=> ');
 
-mineField(boardLength, noOfLives);
+console.log(startGame(boardLength, noOfLives));
