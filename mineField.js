@@ -41,6 +41,10 @@ function convertToLowerCase(letter) {
   return letter;
 }
 
+function inputForMove() {
+  return prompt(MOVE_MESSAGE);
+}
+
 function moveForward(length, currentPos) {
   return currentPos <= length ? currentPos : currentPos - length;
 }
@@ -59,10 +63,6 @@ function moveBackward(length, currentPos) {
   const isMoveValid = currentPos > Math.pow(length, 2) - length;
 
   return isMoveValid ? currentPos : currentPos + length;
-}
-
-function inputForMove() {
-  return prompt(MOVE_MESSAGE);
 }
 
 function controller(move, currentPos, length) {
@@ -88,6 +88,102 @@ function controller(move, currentPos, length) {
   }
 }
 
+function randomPos() {
+  return Math.floor(Math.random() * 3) + 1;
+}
+
+function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
+  const leftPosIndex = moveLeftOrRight(length, curPostion, true);
+  const rightPosIndex = moveLeftOrRight(length, curPostion, false);
+  const upPosIndex = moveForward(curPostion, length);
+  const downPosIndex = moveBackward(curPostion, length);
+
+  if (isValidL && isValidR) {
+    const rightOrLeftIndex = randomPos() === 1 ? leftPosIndex : rightPosIndex;
+    if (isValidU) {
+      return randomPos() === 1 ? upPosIndex : rightOrLeftIndex;
+    }
+
+    return randomPos() === 1 ? downPosIndex : rightOrLeftIndex;
+  }
+
+  if (isValidU && isValidD) {
+    const upOrDownIndex = randomPos() === 1 ? upPosIndex : downPosIndex;
+    if (isValidL) {
+      return randomPos() === 1 ? leftPosIndex : upOrDownIndex;
+    }
+
+    return randomPos() === 1 ? rightPosIndex : upOrDownIndex;
+  }
+
+  if (isValidR) {
+    if (isValidD) {
+      return randomPos() === 1 ? downPosIndex : rightPosIndex;
+    }
+
+    return randomPos() === 1 ? upPosIndex : rightPosIndex;
+  }
+
+  if (isValidL) {
+    if (isValidD) {
+      return randomPos() === 1 ? downPosIndex : leftPosIndex;
+    }
+
+    return randomPos() === 1 ? upPosIndex : leftPosIndex;
+  }
+}
+
+function getRandomIndex(currentPos, length, lastPos) {
+  const rowIndex = (length * length) - length;
+  const isValidD = !(currentPos > rowIndex) && currentPos + length !== lastPos;
+  const isValidL = currentPos % length !== 1 && currentPos - 1 !== lastPos;
+  const isValidR = currentPos % length !== 0 && currentPos + 1 !== lastPos;
+  const isValidU = !(currentPos <= length) && currentPos - length !== lastPos;
+
+  return posOfMine(isValidL, isValidR, isValidU, isValidD, currentPos, length);
+}
+
+function isSubStringFound(subString, string, index) {
+  for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
+    if (string[subStrIndex + index] !== subString[subStrIndex]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isSubstring(string, subString) {
+  if (subString === "") {
+    return false;
+  }
+
+  for (let index = 0; index < string.length; index++) {
+    if (isSubStringFound(subString, string, index)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getRandomSafePath(length) {
+  let currentPos = length * length;
+  let lastPos = currentPos;
+  let path = ' ' + currentPos + ' ';
+
+  while (currentPos !== 1) {
+    const nextPos = getRandomIndex(currentPos, length, lastPos);
+    if (!isSubstring(path, ' ' + nextPos + ' ')) {
+      lastPos = currentPos;
+      currentPos = nextPos;
+      path += currentPos + ' ';
+    }
+  }
+  
+  return path;
+}
+
 function isInputValid(length, chances) {
   console.clear();
   if (length * length < chances) {
@@ -108,62 +204,11 @@ function isInputValid(length, chances) {
   return true;
 }
 
-function randomPos() {
-  return Math.floor(Math.random() * 3) + 1;
-}
-
-function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
-  const leftPosIndex = moveLeftOrRight(length, curPostion, true);
-  const rightPosIndex = moveLeftOrRight(length, curPostion, false);
-  const upPosIndex = moveForward(curPostion, length);
-  const downPosIndex = moveBackward(curPostion, length);
-
-  if (isValidL && isValidR) {
-    const selectRightOrLeft = randomPos() === 1 ? leftPosIndex : rightPosIndex;
-    if (isValidU) {
-      return randomPos() === 1 ? upPosIndex : selectRightOrLeft;
-    }
-    return randomPos() === 1 ? downPosIndex : selectRightOrLeft;
-  }
-
-  if (isValidU && isValidD) {
-    const selectUpOrDown = randomPos() === 1 ? upPosIndex : downPosIndex;
-    if (isValidL) {
-      return randomPos() === 1 ? leftPosIndex : selectUpOrDown;
-    }
-    return randomPos() === 1 ? rightPosIndex : selectUpOrDown;
-  }
-
-  if (isValidR) {
-    if (isValidD) {
-      return randomPos() === 1 ? downPosIndex : rightPosIndex;
-    }
-    return randomPos() === 1 ? upPosIndex : rightPosIndex;
-  }
-
-  if (isValidL) {
-    if (isValidD) {
-      return randomPos() === 1 ? downPosIndex : leftPosIndex;
-    }
-    return randomPos() === 1 ? upPosIndex : leftPosIndex;
-  }
-}
-
-function getMineIndex(currentPos, length, lastPos) {
-  const rowIndex = (length * length) - length;
-  const isValidD = !(currentPos > rowIndex) && currentPos + length !== lastPos;
-  const isValidL = currentPos % length !== 1 && currentPos - 1 !== lastPos;
-  const isValidR = currentPos % length !== 0 && currentPos + 1 !== lastPos;
-  const isValidU = !(currentPos <= length) && currentPos - length !== lastPos;
-
-  return posOfMine(isValidL, isValidR, isValidU, isValidD, currentPos, length);
-}
-
 function messageAccToResult(currentPos, steps) {
   if (currentPos > 1) {
     return 'Yehe you lose... 🥲😓\nBetter luck next time...';
   }
-  // console.log()
+
   return 'Wooohoo! You win... 🤩🏆🥇\nYou took ' + steps + ' steps.';
 }
 
@@ -180,11 +225,11 @@ function calChances(chances) {
 
 function mineFieldSetup(length, chances, currentPos) {
   let steps = 0;
-
+  let lastPos = currentPos;
+  
   while (currentPos !== 1 && chances) {
     console.clear();
-    const lastPos = currentPos;
-    const mineAt = getMineIndex(currentPos, length, lastPos);
+    const mineAt = getRandomIndex(currentPos, length, lastPos);
     console.log(mineBoard(length, currentPos));
     const move = inputForMove();
     currentPos = controller(move, currentPos, length);
