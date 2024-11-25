@@ -1,5 +1,7 @@
 const PLAYER = '🧑‍🦱';
 const GREEN_BLOCK = '🟩';
+const WHITE_BLOCK = '⬜';
+const BOMB = '💣';
 
 const LINE_BREAK = '\n';
 const START_POINT = '⬅️ start';
@@ -15,13 +17,40 @@ function isDivisible(dividend, divisor) {
   return dividend % divisor === 0;
 }
 
-function mineBoard(length, playerPos) {
+function isSubstringFound(subString, string, index) {
+  for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
+    if (string[subStrIndex + index] !== subString[subStrIndex]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isSubstring(string, subString) {
+  if (subString === "") {
+    return false;
+  }
+
+  for (let index = 0; index < string.length; index++) {
+    if (isSubstringFound(subString, string, index)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getColourBox(index, lastPos) {
+  return index === lastPos ? WHITE_BLOCK : GREEN_BLOCK;
+}
+
+function mineBoard(length, playerPos, lastPos) {
   let board = '';
   const numberOfCells = length * length;
 
   for (let index = 1; index <= numberOfCells; index++) {
-    board += playerPos === index ? PLAYER : GREEN_BLOCK;
-
+    board += playerPos === index ? PLAYER : getColourBox(index, lastPos);
     if (index === numberOfCells) {
       board += START_POINT;
     }
@@ -65,7 +94,7 @@ function moveBackward(length, currentPos) {
   return isMoveValid ? currentPos : currentPos + length;
 }
 
-function controller(move, currentPos, length) {
+function controller(move, currentPos, length, lastPos) {
   switch (convertToLowerCase(move)) {
     case FORWARD:
       return moveForward(length, currentPos);
@@ -81,7 +110,7 @@ function controller(move, currentPos, length) {
 
     default:
       console.clear();
-      console.log(mineBoard(length, currentPos));
+      console.log(mineBoard(length, currentPos, lastPos));
       console.log('Please enter a valid input...');
       const validChar = inputForMove();
       return controller(validChar, currentPos, length);
@@ -92,11 +121,19 @@ function randomPos() {
   return Math.floor(Math.random() * 3) + 1;
 }
 
-function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
+function nextSafeBox(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
   const leftPosIndex = moveLeftOrRight(length, curPostion, true);
   const rightPosIndex = moveLeftOrRight(length, curPostion, false);
-  const upPosIndex = moveForward(curPostion, length);
-  const downPosIndex = moveBackward(curPostion, length);
+  const upPosIndex = moveForward(length, curPostion);
+  const downPosIndex = moveBackward(length, curPostion);
+
+  if (isValidD && isValidU && !isValidL && !isValidR) {
+    return upPosIndex;
+  }
+
+  if (isValidL && isValidR && !isValidU && !isValidD) {
+    return randomPos() === 1 ? leftPosIndex : rightPosIndex;
+  }
 
   if (isValidL && isValidR) {
     const rightOrLeftIndex = randomPos() === 1 ? leftPosIndex : rightPosIndex;
@@ -131,40 +168,22 @@ function posOfMine(isValidL, isValidR, isValidU, isValidD, curPostion, length) {
 
     return randomPos() === 1 ? upPosIndex : leftPosIndex;
   }
+
+  if (isValidU) return upPosIndex;
+  if (isValidD) return downPosIndex;
+  if (isValidL) return leftPosIndex;
+  if (isValidR) return rightPosIndex;
 }
 
 function getRandomIndex(currentPos, length, lastPos) {
+  // TODO: Divide valid checks into functions
   const rowIndex = (length * length) - length;
   const isValidD = !(currentPos > rowIndex) && currentPos + length !== lastPos;
   const isValidL = currentPos % length !== 1 && currentPos - 1 !== lastPos;
   const isValidR = currentPos % length !== 0 && currentPos + 1 !== lastPos;
   const isValidU = !(currentPos <= length) && currentPos - length !== lastPos;
 
-  return posOfMine(isValidL, isValidR, isValidU, isValidD, currentPos, length);
-}
-
-function isSubStringFound(subString, string, index) {
-  for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
-    if (string[subStrIndex + index] !== subString[subStrIndex]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function isSubstring(string, subString) {
-  if (subString === "") {
-    return false;
-  }
-
-  for (let index = 0; index < string.length; index++) {
-    if (isSubStringFound(subString, string, index)) {
-      return true;
-    }
-  }
-
-  return false;
+  return nextSafeBox(isValidL, isValidR, isValidU, isValidD, currentPos, length);
 }
 
 function getRandomSafePath(length) {
@@ -172,15 +191,14 @@ function getRandomSafePath(length) {
   let lastPos = currentPos;
   let path = ' ' + currentPos + ' ';
 
-  while (currentPos !== 1) {
+  while (currentPos !== 2 && currentPos !== length + 1) {
     const nextPos = getRandomIndex(currentPos, length, lastPos);
+    lastPos = currentPos;
+    currentPos = nextPos;
     if (!isSubstring(path, ' ' + nextPos + ' ')) {
-      lastPos = currentPos;
-      currentPos = nextPos;
       path += currentPos + ' ';
     }
   }
-  
   return path;
 }
 
@@ -215,6 +233,7 @@ function messageAccToResult(currentPos, steps) {
 function hintMessage(chances) {
   console.log('You have only ' + chances + ' chances left.');
   console.log('There is a mine...💥💥💣');
+  confirm('Press Enter to proceed:');
 }
 
 function calChances(chances) {
@@ -223,25 +242,28 @@ function calChances(chances) {
   return chances;
 }
 
-function mineFieldSetup(length, chances, currentPos) {
+function mineField(length, chances, currentPos) {
   let steps = 0;
   let lastPos = currentPos;
-  
+  const path = getRandomSafePath(length);
+
   while (currentPos !== 1 && chances) {
     console.clear();
-    const mineAt = getRandomIndex(currentPos, length, lastPos);
-    console.log(mineBoard(length, currentPos));
+    console.log(mineBoard(length, currentPos, lastPos));
     const move = inputForMove();
-    currentPos = controller(move, currentPos, length);
+    const nextPos = controller(move, currentPos, length, lastPos);
     steps++;
+    lastPos = currentPos;
+    currentPos = nextPos;
 
-    if (mineAt === currentPos && mineAt !== 1) {
+    if (!isSubstring(path, ' ' + currentPos + ' ') && currentPos !== 1) {
       chances = calChances(chances);
-      currentPos = lastPos;
+      currentPos = length * length;
+      lastPos = currentPos;
     }
   }
 
-  console.log(mineBoard(length, currentPos));
+  console.log(mineBoard(length, currentPos, lastPos));
   return messageAccToResult(currentPos, steps);
 }
 
@@ -253,16 +275,17 @@ function gameInfo() {
   return game + goal + currPos;
 }
 
-function startGame(length, chances) {
+function startGame() {
+  console.clear();
+  console.log(gameInfo());
+  const length = +prompt(' Enter the length of the board => ');
+  const chances = +prompt(' Enter the number lives=> ');
+
   if (!isInputValid(length, chances)) return;
 
   let currentPos = length * length;
-  return mineFieldSetup(length, chances, currentPos);
+  return mineField(length, chances, currentPos);
 }
 
-console.clear();
-console.log(gameInfo());
-const boardLength = +prompt(' Enter the length of the board => ');
-const noOfLives = +prompt(' Enter the number lives=> ');
 
-console.log(startGame(boardLength, noOfLives));
+console.log(startGame());
