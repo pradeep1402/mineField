@@ -256,8 +256,9 @@ function isMineFound(path, playerPos) {
   return !isSubstring(path, ' ' + playerPos + ' ') && playerPos !== 1;
 }
 
-function mineField(length, chances, playerPos) {
+function mineField(length, chances) {
   let steps = 0;
+  let playerPos = length * length;
   let previousPos = playerPos;
   const path = getPath(length);
 
@@ -287,6 +288,7 @@ function gameDetails() {
   return game + goal + rules + currPos;
 }
 
+
 function startGame() {
   console.clear();
   console.log(gameDetails());
@@ -297,9 +299,7 @@ function startGame() {
     return startGame();
   }
 
-  const playerPos = length * length;
-  return mineField(length, chances, playerPos);
+  return mineField(length, chances);
 }
-
 
 console.log(startGame());
