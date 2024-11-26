@@ -16,7 +16,7 @@ function isDivisible(dividend, divisor) {
   return dividend % divisor === 0;
 }
 
-function isSubstringFound(subString, string, index) { // Need to refactor the name
+function isSubstringPresentAt(subString, string, index) {
   for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
     if (string[subStrIndex + index] !== subString[subStrIndex]) {
       return false;
@@ -32,7 +32,7 @@ function isSubstring(string, subString) {
   }
 
   for (let index = 0; index < string.length; index++) {
-    if (isSubstringFound(subString, string, index)) {
+    if (isSubstringPresentAt(subString, string, index)) {
       return true;
     }
   }
