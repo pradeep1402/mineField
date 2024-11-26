@@ -138,7 +138,7 @@ function nextSafePos(isValidDir1, isValidDir2, isValidDir3, currentPos, length) 
   return leftPos;
 }
 
-function nextSafeBox(isValidL, isValidR, isValidU, isValidD, currentPos, length) {
+function nextSafeIndex(isValidL, isValidR, isValidU, isValidD, currentPos, length) {
   switch (true) {
     case isValidL:
       return nextSafePos(isValidD, isValidR, isValidU, currentPos, length);
@@ -149,13 +149,13 @@ function nextSafeBox(isValidL, isValidR, isValidU, isValidD, currentPos, length)
     case isValidR:
       return nextSafePos(isValidD, isValidL, isValidU, currentPos, length);
 
-    case isValidU:
+    default:
       return nextSafePos(isValidD, isValidL, isValidR, currentPos, length);
   }
 }
 
 function isValidDown(playerPos, length) {
-  const bottomLeftIndex = (length * length - 1);
+  const bottomLeftIndex = length * (length - 1);
   return !(playerPos > bottomLeftIndex);
 }
 
@@ -168,7 +168,7 @@ function isValidLeft(playerPos, length) {
 }
 
 function isValidRight(playerPos, length) {
-  return playerPos % length !== 0
+  return !isDivisible(playerPos, length);
 }
 
 function getRandomIndex(playerPos, length) {
@@ -177,7 +177,7 @@ function getRandomIndex(playerPos, length) {
   const isValidR = isValidRight(playerPos, length);
   const isValidU = isValidUp(playerPos, length);
 
-  return nextSafeBox(isValidL, isValidR, isValidU, isValidD, playerPos, length);
+  return nextSafeIndex(isValidL, isValidR, isValidU, isValidD, playerPos, length);
 }
 
 function getPath(length) {
