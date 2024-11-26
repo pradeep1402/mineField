@@ -5,10 +5,10 @@ const WHITE_BLOCK = '⬜';
 const LINE_BREAK = '\n';
 const START_POINT = '⬅️ start';
 
-const FORWARD = 'w';
+const UP = 'w';
 const LEFT = 'a';
 const RIGHT = 'd';
-const BACKWARD = 's';
+const DOWN = 's';
 
 const MOVE_MESSAGE = 'To move W to ⬆️ | A to ⬅️ | S to ⬇️ | D to ➡️ :';
 
@@ -16,7 +16,7 @@ function isDivisible(dividend, divisor) {
   return dividend % divisor === 0;
 }
 
-function isSubstringFound(subString, string, index) {
+function isSubstringFound(subString, string, index) { // Need to refactor the name
   for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
     if (string[subStrIndex + index] !== subString[subStrIndex]) {
       return false;
@@ -91,12 +91,13 @@ function invalidControlInput(playerPos, length, previousPos) {
   console.log(mineBoard(length, playerPos, previousPos));
   console.log('Please enter a valid input...');
   const validChar = prompt(MOVE_MESSAGE);
+
   return controller(validChar, playerPos, length);
 }
 
 function controller(move, playerPos, length, previousPos) {
   switch (convertToLowerCase(move)) {
-    case FORWARD:
+    case UP:
       return moveForward(length, playerPos);
 
     case LEFT:
@@ -105,7 +106,7 @@ function controller(move, playerPos, length, previousPos) {
     case RIGHT:
       return moveLeftOrRight(length, playerPos, false);
 
-    case BACKWARD:
+    case DOWN:
       return moveBackward(length, playerPos);
 
     default:
@@ -118,24 +119,26 @@ function randomPos() {
 }
 
 function nextSafePos(isValidDir1, isValidDir2, isValidDir3, currentPos, length) {
-  const leftPos = moveLeftOrRight(length, currentPos, true);
-  const rightPos = moveLeftOrRight(length, currentPos, false);
-  const upPos = moveForward(length, currentPos);
-  const downPos = moveBackward(length, currentPos);
+  const leftPosition = moveLeftOrRight(length, currentPos, true);
+  const rightPosition = moveLeftOrRight(length, currentPos, false);
+  const upPosition = moveForward(length, currentPos);
+  const downPosition = moveBackward(length, currentPos);
 
   if (isValidDir2) {
-    const rOrLPos = randomPos() === 1 ? leftPos : rightPos;
+    const leftOrRightPos = randomPos() === 1 ? leftPosition : rightPosition;
 
     if (isValidDir3) {
-      return randomPos() === 1 ? upPos : rOrLPos;
-    } else if (isValidDir1) {
-      return randomPos() === 1 ? downPos : rOrLPos;
+      return randomPos() === 1 ? upPosition : leftOrRightPos;
     }
 
-    return rOrLPos;
+    if (isValidDir1) {
+      return randomPos() === 1 ? downPosition : leftOrRightPos;
+    }
+
+    return leftOrRightPos;
   }
 
-  return leftPos;
+  return leftPosition;
 }
 
 function nextSafeIndex(isValidL, isValidR, isValidU, isValidD, currentPos, length) {
@@ -156,6 +159,7 @@ function nextSafeIndex(isValidL, isValidR, isValidU, isValidD, currentPos, lengt
 
 function isValidDown(playerPos, length) {
   const bottomLeftIndex = length * (length - 1);
+
   return !(playerPos > bottomLeftIndex);
 }
 
@@ -232,19 +236,19 @@ function hintMessage(chances) {
   confirm('Press Enter to proceed:');
 }
 
-function displayMineFiels(length, playerPos, previousPos) {
+function displayMineFields(length, playerPos, previousPos) {
   console.clear();
   console.log(mineBoard(length, playerPos, previousPos));
 }
 
 function moveInput(playerPos, length, previousPos) {
   const move = prompt(MOVE_MESSAGE);
-  return controller(move, playerPos, length, previousPos);
 
+  return controller(move, playerPos, length, previousPos);
 }
 
 function isGameOver(playerPos, chances, previousPos, length) {
-  displayMineFiels(length, playerPos, previousPos);
+  displayMineFields(length, playerPos, previousPos);
   return playerPos !== 1 && chances
 }
 
@@ -258,7 +262,7 @@ function mineField(length, chances, playerPos) {
   const path = getPath(length);
 
   while (isGameOver(playerPos, chances, previousPos, length)) {
-    displayMineFiels(length, playerPos, previousPos);
+    displayMineFields(length, playerPos, previousPos);
     const nextPos = moveInput(playerPos, length, previousPos);
     steps++;
     previousPos = playerPos;
@@ -277,7 +281,7 @@ function mineField(length, chances, playerPos) {
 function gameDetails() {
   const game = '\n\t\t💣 MINE FIELD 💣\n';
   const goal = '\n Your goal is to reach the top left corner ↖️ ';
-  const rules = '\n Minimus length and chances are five.'
+  const rules = '\n Minimum size and chances should be five.'
   const currPos = '\n " + PLAYER + " represents your current Position. \n';
 
   return game + goal + rules + currPos;
