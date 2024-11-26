@@ -282,7 +282,7 @@ function gameDetails() {
   const game = '\n\t\t💣 MINE FIELD 💣\n';
   const goal = '\n Your goal is to reach the top left corner ↖️ ';
   const rules = '\n Minimum size and chances should be five.'
-  const currPos = '\n " + PLAYER + " represents your current Position. \n';
+  const currPos = '\n ' + PLAYER + ' represents your current Position. \n';
 
   return game + goal + rules + currPos;
 }
