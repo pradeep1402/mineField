@@ -16,31 +16,6 @@ function isDivisible(dividend, divisor) {
   return dividend % divisor === 0;
 }
 
-function isSubstringPresentAt(subString, string, index) {
-  for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
-
-    if (string[subStrIndex + index] !== subString[subStrIndex]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function isSubstring(string, subString) {
-  if (subString === "") {
-    return false;
-  }
-
-  for (let index = 0; index < string.length; index++) {
-    if (isSubstringPresentAt(subString, string, index)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 function getColourBox(index, previousPos) {
   return index === previousPos ? WHITE_BLOCK : GREEN_BLOCK;
 }
