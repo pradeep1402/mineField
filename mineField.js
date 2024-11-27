@@ -18,6 +18,7 @@ function isDivisible(dividend, divisor) {
 
 function isSubstringPresentAt(subString, string, index) {
   for (let subStrIndex = 0; subStrIndex < subString.length; subStrIndex++) {
+
     if (string[subStrIndex + index] !== subString[subStrIndex]) {
       return false;
     }
@@ -61,6 +62,18 @@ function mineBoard(length, playerPos, previousPos) {
   return board;
 }
 
+function displayMineBoardWithPath(length, path) {
+  let board = '';
+  const numberOfCells = length * length;
+
+  for (let index = 0; index < numberOfCells - 1; index++) {
+    board += isDivisible(index, length) ? LINE_BREAK : '';
+    board += isElementPresent(path, index) ? WHITE_BLOCK : GREEN_BLOCK;
+  }
+  console.clear();
+  console.log(board + PLAYER + START_POINT);
+}
+
 function convertToLowerCase(letter) {
   if (letter === 'W' || letter === 'w') return 'w';
   if (letter === 'A' || letter === 'a') return 'a';
@@ -87,8 +100,7 @@ function moveBackward(length, playerPos) {
 }
 
 function invalidControlInput(playerPos, length, previousPos) {
-  console.clear();
-  console.log(mineBoard(length, playerPos, previousPos));
+  displayMineFields(length, playerPos, previousPos);
   console.log('Please enter a valid input...');
   const validChar = prompt(MOVE_MESSAGE);
 
@@ -123,9 +135,9 @@ function nextSafePos(isValidDir1, isValidDir2, isValidDir3, currentPos, length) 
   const rightPosition = moveLeftOrRight(length, currentPos, false);
   const upPosition = moveForward(length, currentPos);
   const downPosition = moveBackward(length, currentPos);
+  const leftOrRightPos = randomPos() === 1 ? leftPosition : rightPosition;
 
   if (isValidDir2) {
-    const leftOrRightPos = randomPos() === 1 ? leftPosition : rightPosition;
 
     if (isValidDir3) {
       return randomPos() === 1 ? upPosition : leftOrRightPos;
@@ -135,10 +147,9 @@ function nextSafePos(isValidDir1, isValidDir2, isValidDir3, currentPos, length) 
       return randomPos() === 1 ? downPosition : leftOrRightPos;
     }
 
-    return leftOrRightPos;
   }
 
-  return leftPosition;
+  return leftOrRightPos;
 }
 
 function nextSafeIndex(isValidL, isValidR, isValidU, isValidD, currentPos, length) {
@@ -184,18 +195,28 @@ function getRandomIndex(playerPos, length) {
   return nextSafeIndex(isValidL, isValidR, isValidU, isValidD, playerPos, length);
 }
 
+function isElementPresent(path, element) {
+  for (let index = 0; index < path.length; index++) {
+    if (path[index] === element) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function getPath(length) {
   let playerPos = length * length;
   let previousPos = playerPos;
-  let path = ' ' + playerPos + ' ';
+  const path = [playerPos];
 
   while (playerPos !== 2 && playerPos !== length + 1) {
     const nextPos = getRandomIndex(playerPos, length, previousPos);
     previousPos = playerPos;
     playerPos = nextPos;
 
-    if (!isSubstring(path, ' ' + nextPos + ' ')) {
-      path += playerPos + ' ';
+    if (!isElementPresent(path, playerPos)) {
+      path[path.length] = playerPos;
     }
   }
 
@@ -253,7 +274,7 @@ function isGameOver(playerPos, chances, previousPos, length) {
 }
 
 function isMineFound(path, playerPos) {
-  return !isSubstring(path, ' ' + playerPos + ' ') && playerPos !== 1;
+  return !isElementPresent(path, playerPos) && playerPos !== 1;
 }
 
 function mineField(length, chances) {
@@ -276,6 +297,7 @@ function mineField(length, chances) {
     }
   }
 
+  displayMineBoardWithPath(length, path);
   return messageAccToResult(playerPos, steps);
 }
 
